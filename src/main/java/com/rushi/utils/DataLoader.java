@@ -21,7 +21,7 @@ public class DataLoader implements ApplicationRunner {
 		
 		System.out.println(service.getStates(1));
 		
-		System.out.println(service.getCities(2));
+//		System.out.println(service.getCities(2));
 	
 	}
 
