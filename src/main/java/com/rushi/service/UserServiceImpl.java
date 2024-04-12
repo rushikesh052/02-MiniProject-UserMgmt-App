@@ -1,10 +1,11 @@
 package com.rushi.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Random;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import com.rushi.repo.CityRepo;
 import com.rushi.repo.CountryRepo;
 import com.rushi.repo.StateRepo;
 import com.rushi.repo.UserRepo;
+import com.rushi.utils.EmailUtils;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -36,93 +38,147 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private CityRepo cityRepo;
 	
+	@Autowired
+	private EmailUtils emailUtils;
+	
 
 	@Override
 	public Map<Integer, String> getCountries() {
+		Map<Integer, String> country=new HashMap<>();
+		
+//		CountryEntity countrie=new CountryEntity();
+//		countrie.getCountryId();
+//		
+//		StateEntity entity=new StateEntity();
+//		Example<StateEntity> of=Example.of(entity);
+//		
+//		List<StateEntity> stateList =stateRepo.findAll();
+//		stateList.forEach(s->{
+//			country.put(s.getStateId(), s.getStateName());
+//		});
+//		return stateList;
+//	}
+		
 		List<CountryEntity> countries=countryRepo.findAll();
-		Map<Integer,String>country= countries.stream().collect(Collectors.toMap(CountryEntity::getCountryId,CountryEntity::getCountryName));
+		countries.forEach(c->{
+			country.put(c.getCountryId(), c.getCountryName());
+		});
 		return country;
 	}
-	
-	
-	
-	
 	@Override
 	public Map<Integer, String> getStates(Integer cid) {
+		Map<Integer, String> state=new HashMap<>();
 		List<StateEntity> states=stateRepo.findByCountryId(cid);
-		Map<Integer, String> state=states.stream().collect(Collectors.toMap(StateEntity::getStateId, StateEntity::getStateName));
+//		Map<Integer, String> state=states.stream().collect(Collectors.toMap(StateEntity::getStateId, StateEntity::getStateName));
+		states.forEach(s->{
+			state.put(s.getStateId(),s.getStateName());
+		});
 		return state;
 
 	}
 
 	@Override
 	public Map<Integer, String> getCities(Integer sid) {
-		List<CityEntity> cityAll=cityRepo.findByStateId(sid);
-		Map<Integer, String> cities=
-				cityAll.stream().collect(Collectors.toMap(CityEntity::getCityId, CityEntity::getCityName));
-		
+		Map<Integer, String> cities=new HashMap<>();
+		List<CityEntity> city=cityRepo.findByStateId(sid);
+//		Map<Integer, String> cities=
+//				cityAll.stream().collect(Collectors.toMap(CityEntity::getCityId, CityEntity::getCityName));
+		city.forEach(c->{
+			cities.put(c.getCityId(),c.getCityName());
+		});
 		return cities;
 	}
 
 	@Override
 	public UserDto getUser(String email) {
-			UserDto userDto=userRepo.findByEmail(email);
+			UserEntity userEntity=userRepo.findByEmail(email);
+//			--approch -1 
+//			UserDto dto=new UserDto();
+//			BeanUtils.copyProperties(userEntity, UserDto.class);
+//			
+//			--approch -2  //using third party dependency
+			
+			ModelMapper mapper=new ModelMapper();
+			UserDto userDto=mapper.map(userEntity,UserDto.class);
+			
 		return userDto;
 	}
 
 	@Override
 	public boolean registerUser(RegisterDto regDto) {
-		if(regDto==null || regDto.getEmail()==null || regDto.getPwd()==null) {
-		return false;
-	}
-	
-	if(userRepo.existsByEmail(regDto.getEmail())) {
-		return false;
-	}
-	
-	UserEntity user=new UserEntity();
-	user.setEmail(regDto.getEmail());
-	user.setPwdUpdated(regDto.getPwd());
-	try {
-		userRepo.save(user);
-		return true;
-	}catch(Exception e) {
-		e.printStackTrace();
-		return false;
-	}
-	}
+		
 
+		ModelMapper mapper=new ModelMapper();
+		
+		UserEntity entity=mapper.map(regDto,UserEntity.class);
+		
+		CountryEntity country= countryRepo.findById(regDto.getCountryId()).orElseThrow();
+		
+		StateEntity state=stateRepo.findById(regDto.getStateId()).orElseThrow();
+		
+		CityEntity city=cityRepo.findById(regDto.getCityId()).orElseThrow();
+		
+		 entity.setCountry(country);
+		 entity.setState(state);
+		 entity.setCity(city);
+		 entity.setPwd(generateRandom());
+		 entity.setPwdUpdated("no");
+		 
+		 UserEntity savedEntity =userRepo.save(entity);
+		 String subject="user Registration";
+		 
+		 String body="Your temporary PWD is :: "+ entity.getPwd();
+		 
+		 emailUtils.sendEmail(regDto.getEmail(),subject , body);
+		 
+		 return savedEntity.getUserId()!=null;
+		 
+		
+		
+	}
 	@Override
 	public UserDto getUser(LoginDto loginDto) {
-		if(loginDto==null || loginDto.getEmail()==null || loginDto.getPwd()==null) {
-			return null;
-		}
-		UserEntity user=new UserEntity();
-		
-		if(user !=null && passwordMatches(user.getPwdUpdated(),loginDto.getPwd())){
-			UserDto userDto=new  UserDto();
-			userDto.setUserId(user.getUserId());
-			userDto.setEmail(user.getEmail());
-			return userDto;
-		}else {
-			return null;
-		}
+	UserEntity userEntity=	userRepo.findByEmailAndPwd(loginDto.getEmail(),loginDto.getPwd());
+	if(userEntity==null) {
+		return null;
 	}
-	public boolean passwordMatches(String password, String plainPassword) {
-		
-		return password.equals(plainPassword);
+	
+	ModelMapper mapper=new ModelMapper();
+	return mapper.map(userEntity, UserDto.class);
 	}
 		
 	@Override
 	public boolean resetPwd(ResetPwdDto pwdDto) {
-		
+		UserEntity userEntity=userRepo.findByEmail(pwdDto.getEmail());
+		if(userEntity!=null) {
+		userEntity.setPwd(pwdDto.getNewPwd());
+		userEntity.setPwdUpdated("YES");
+		userRepo.save(userEntity);
+		return true;
+		}
 		return false;
 	}
 
 	@Override
 	public String getQuote() {
+		String url="https://type.fit/api/quotes";
 		
 		return null;
+	}
+	
+	private static String generateRandom() {
+		
+		String aToZ ="ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+		
+		Random rand=new Random();
+		StringBuilder res=new StringBuilder();
+		for(int i=0; i<5; i++)
+		{
+			int randIndex=rand.nextInt(aToZ.length());
+			res.append(aToZ.charAt(randIndex));
+		}
+		return res.toString();
+		
 	}
 	
 	

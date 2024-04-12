@@ -27,6 +27,8 @@ public class UserEntity {
 	
 	private String email;
 	
+	private String pwd;
+	
 	private String pwdUpdated;
 	
 	private Long phno;
