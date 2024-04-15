@@ -73,16 +73,15 @@ public class UserController {
 	public String login(LoginDto loginDto, Model model) {
 		UserDto user=userService.getUser(loginDto);
 		if(user == null) {
-			model.addAttribute("smsg","Invalid Credentials");
+			model.addAttribute("emsg","Invalid Credentials");
 			return "index";
 		}
 		if("YES".equals(user.getPwdUpdated())) {
 			return "redirect:dashboard";
 		}else {
-			
 			ResetPwdDto resetPwdDto=new ResetPwdDto();
 			resetPwdDto.setEmail(user.getEmail());
-			model.addAttribute("resetPwdDto",new ResetPwdDto());
+			model.addAttribute("resetPwdDto",resetPwdDto);
 			return "resetPwdView";
 		}
 	}
@@ -91,22 +90,20 @@ public class UserController {
 	public String resetPwd(ResetPwdDto pwdDto, Model model) {
 		
 		if(!(pwdDto.getNewPwd().equals(pwdDto.getConfirmPwd()))) {
-			model.addAttribute("emsg","new Pwd and Confirm Should be same");
+			model.addAttribute("emsg","new Pwd and Confirm Must be same");
 			return "resetPwdView";
 		}
-		
-		UserDto user=userService.getUser(pwdDto.getEmail());
-		
+			UserDto user=userService.getUser(pwdDto.getEmail());
 		if(user.getPwd().equals(pwdDto.getOldPwd())) {
 			boolean resetPwd = userService.resetPwd(pwdDto);
 			if(resetPwd) {
 				return "redirect:dashboard";
 			}else {
-				model.addAttribute("emsg","Pwd Update Failed");
+				model.addAttribute("emsg","Password Update failed");
 				return "resetPwdView";
 			}
 		}else {
-			model.addAttribute("emsg","Given Old Pwd is wrong");
+			model.addAttribute("emsg","Incorrect Old password");
 			return "resetPwdView";
 		}
 	}

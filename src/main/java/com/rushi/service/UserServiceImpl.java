@@ -100,14 +100,7 @@ public class UserServiceImpl implements UserService {
 			
 			if (userEntity == null) {
 		        return null;
-		    }
-//		   
-//			UserDto dto=new UserDto();
-//			BeanUtils.copyProperties(userEntity, dto);
-//			
-			
-			
-			
+		    }	
 			ModelMapper mapper=new ModelMapper();
 			UserDto userDto=mapper.map(userEntity,UserDto.class);
 			
