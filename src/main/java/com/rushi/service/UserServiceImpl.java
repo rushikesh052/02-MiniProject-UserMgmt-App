@@ -6,10 +6,15 @@ import java.util.Map;
 import java.util.Random;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rushi.dto.LoginDto;
+import com.rushi.dto.QuoteDto;
 import com.rushi.dto.RegisterDto;
 import com.rushi.dto.ResetPwdDto;
 import com.rushi.dto.UserDto;
@@ -92,11 +97,16 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDto getUser(String email) {
 			UserEntity userEntity=userRepo.findByEmail(email);
-//			--approch -1 
-//			UserDto dto=new UserDto();
-//			BeanUtils.copyProperties(userEntity, UserDto.class);
-//			
-//			--approch -2  //using third party dependency
+			
+			if (userEntity == null) {
+		       
+		        return null;
+		    }
+		   /*
+			UserDto dto=new UserDto();
+			BeanUtils.copyProperties(userEntity, dto);
+			*/
+			//using third party dependency
 			
 			ModelMapper mapper=new ModelMapper();
 			UserDto userDto=mapper.map(userEntity,UserDto.class);
@@ -161,9 +171,23 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public String getQuote() {
-		String url="https://type.fit/api/quotes";
 		
-		return null;
+		QuoteDto[] quotations=null;
+		String url="https://type.fit/api/quotes";
+		RestTemplate rt=new RestTemplate();
+		ResponseEntity<String> forEntity=rt.getForEntity(url,String.class);
+		String responseBody=forEntity.getBody();
+		ObjectMapper mapper=new ObjectMapper();
+		try {
+			quotations =mapper.readValue(responseBody, QuoteDto[].class);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		Random r=new Random();
+		int index=r.nextInt(quotations.length-1);
+		return quotations[index].getText();
 	}
 	
 	private static String generateRandom() {

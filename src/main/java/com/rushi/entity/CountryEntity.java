@@ -11,6 +11,7 @@ import lombok.Data;
 public class CountryEntity {
 	
 	@Id
+	
 	private Integer countryId;
 	
 	private String countryName;

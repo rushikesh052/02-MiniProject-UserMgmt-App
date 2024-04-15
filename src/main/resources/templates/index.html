@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+</head>
+<body>
+	<form th:action="@{/login}" th:object="${loginDto}" method="POST" >
+	<table>
+	<tr>
+		<td>State:</td>
+		<td><input type="text" th:field= "*{email}" /></td>
+		</tr>
+		
+		<tr>
+		<td>City:</td>
+		<td><input type="text" th:field= "*{pwd}"/></td>
+		</tr>
+		
+		<tr>
+		<td></td>
+		<td>
+		<input type="submit" value="Sign-UP" class="btn-btn-primary"/>
+		</td>
+		</tr>
+		
+	</table>
+	Don't have account?<a href="/register">Sign-Up-Here</a>
+	</form>	
+</body>
+</html>
