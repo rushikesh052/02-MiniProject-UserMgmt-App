@@ -15,6 +15,8 @@ import com.rushi.dto.RegisterDto;
 import com.rushi.dto.ResetPwdDto;
 import com.rushi.dto.UserDto;
 import com.rushi.service.UserService;
+import com.rushi.utils.AppConstants;
+import com.rushi.utils.AppProperties;
 
 @Controller
 public class UserController {
@@ -22,12 +24,15 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
+	@Autowired
+	private AppProperties prop;
+	
 	@GetMapping("/register")
 	public String registerPage(Model model) {
 		model.addAttribute("registerDto",new RegisterDto());
 		 Map<Integer, String> countriesMap = userService.getCountries();
 		 model.addAttribute("countries",countriesMap);
-		 return "registerView";
+		 return AppConstants.REGISTER_PAGE;
 	}
 	
 	@GetMapping("/state/{cid}")
@@ -46,34 +51,41 @@ public class UserController {
 	@PostMapping("/register")
 	public String register(RegisterDto regDto,Model model) {
 			
+			model.addAttribute("countries",userService.getCountries());
 			
+			Map<String, String> messages=prop.getMessages();
+		
 			UserDto user=userService.getUser(regDto.getEmail());
 			
 			if(user!=null){
-				model.addAttribute("emsg","Duplicate Email...!!");
-				return "registerView";
+				model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.DUPLICATE_EMAIL));
+				return AppConstants.REGISTER_PAGE;
 			}
 			boolean registerUser=userService.registerUser(regDto);
 			
 			if(registerUser) {
-				model.addAttribute("smsg", "User Registered..!!");
+				model.addAttribute(AppConstants.SUCCESS_MSG, messages.get(AppConstants.REG_SUCCESS));
 			}
 			else {
-				model.addAttribute("emsg","register failed");
+				model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.REG_FAIL));
 			}
-			return "registerView";
+			return AppConstants.REGISTER_PAGE;
 	}
 	
 	@GetMapping("/")
 	public String loginPage(Model model) {
+		
 		model.addAttribute("loginDto",new LoginDto());
 		return "index";
 	}
 	@PostMapping("/login")
 	public String login(LoginDto loginDto, Model model) {
+		
+		Map<String, String> messages=prop.getMessages();
+		
 		UserDto user=userService.getUser(loginDto);
 		if(user == null) {
-			model.addAttribute("emsg","Invalid Credentials");
+			model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.INVALD_CRED));
 			return "index";
 		}
 		if("YES".equals(user.getPwdUpdated())) {
@@ -82,16 +94,18 @@ public class UserController {
 			ResetPwdDto resetPwdDto=new ResetPwdDto();
 			resetPwdDto.setEmail(user.getEmail());
 			model.addAttribute("resetPwdDto",resetPwdDto);
-			return "resetPwdView";
+			return AppConstants.RESETPWD_PAGE;
 		}
 	}
 	
 	@PostMapping("/resetPwd")
 	public String resetPwd(ResetPwdDto pwdDto, Model model) {
 		
+		Map<String, String> messages=prop.getMessages();
+		
 		if(!(pwdDto.getNewPwd().equals(pwdDto.getConfirmPwd()))) {
-			model.addAttribute("emsg","new Pwd and Confirm Must be same");
-			return "resetPwdView";
+			model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.PWDMATCH_ERR));
+			return AppConstants.RESETPWD_PAGE;
 		}
 			UserDto user=userService.getUser(pwdDto.getEmail());
 		if(user.getPwd().equals(pwdDto.getOldPwd())) {
@@ -99,12 +113,12 @@ public class UserController {
 			if(resetPwd) {
 				return "redirect:dashboard";
 			}else {
-				model.addAttribute("emsg","Password Update failed");
-				return "resetPwdView";
+				model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.PWDUPDATE_ERR));
+				return AppConstants.RESETPWD_PAGE;
 			}
 		}else {
-			model.addAttribute("emsg","Incorrect Old password");
-			return "resetPwdView";
+			model.addAttribute(AppConstants.ERROR_MSG,messages.get(AppConstants.INCORRECTOLDPWD_ERR));
+			return AppConstants.RESETPWD_PAGE;
 		}
 	}
 	@GetMapping("/dashboard")

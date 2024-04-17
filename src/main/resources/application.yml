@@ -1,0 +1,34 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: 02-MiniProject-UserMgmt-App
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: root
+    url: jdbc:mysql://localhost:3306/usermgmt_miniproj
+    username: root
+  jpa:
+    show-sql: true
+  mail:
+    host: smtp.gmail.com
+    password: asdf asdg jhjj jhjj
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    username: rushikeshshelke052@gmail.com
+
+app:
+ messages:
+  dupEmail: Duplicate Email
+  invalidCredential: Invalid Credentials
+  RegSuccess: User Registered..!!
+  RegFail: register failed
+  invalidCred: Invalid Credentials
+  pwdMatchErr: new Pwd and Confirm Must be same
+  pwdUpdateErr: Password Update failed
+  incorrectOldPwdErr: Incorrect Old password
